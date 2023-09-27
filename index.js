@@ -164,19 +164,22 @@ async function getSong(userPhone, repliedMsgSID){
 
             const userLongitude = music.longitude;
             const userLatitude = music.latitude;
+            const user = music.phone_number;
 
             var currDistance = geodist({lat: latitude, lon: longitude}, {lat: userLatitude, lon: userLongitude}, {unit: "feet"});
-            if(distance === -1 || distance > currDistance){
+            if((distance === -1 || distance > currDistance) && userPhone != user){
                 
                 closestMusic = music;
                 distance = currDistance;
+
             }
     
         });
 
         await client.messages.create({
+            messagingServiceSid: process.env.SERVICE_SID,
             body: `${closestMusic.music_link}\n\n${closestMusic.name}`,
-            from: process.env.SERVICE_SID,
+            persistentAction: [`geo:${closestMusic.latitude},${closestMusic.longitude}`],
             to: userPhone
         });
 
