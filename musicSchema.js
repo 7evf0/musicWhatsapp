@@ -6,6 +6,7 @@ const musicSchema = new mongoose.Schema({
     music_link: String,
     longitude: Number,
     latitude: Number,
+    views: Number
 });
 
 module.exports = mongoose.model("Music", musicSchema);

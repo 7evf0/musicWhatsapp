@@ -15,7 +15,29 @@ const Message = require("./messageSchema.js");
 const dist = require("geo-distance-js");
 var geodist = require('geodist');
 
-// MAIN CONNECTION
+// DISCORDJS REQUIREMENTS
+
+const discord = require("discord.js");
+const {Client, IntentsBitField ,EmbedBuilder} = discord;
+const dcClient = new Client({
+    intents:[
+        IntentsBitField.Flags.Guilds,
+        IntentsBitField.Flags.GuildVoiceStates,
+        IntentsBitField.Flags.GuildMessages,
+        IntentsBitField.Flags.GuildMessageTyping,
+        IntentsBitField.Flags.MessageContent
+    ]
+});
+dcClient.login(process.env.TOKEN);
+
+dcClient.on("messageCreate", async (msg) => {
+    const msgContent = msg.content;
+
+    if(msgContent === "most viewed"){
+        sendBusinessInitiated();
+    }
+});
+
 // MAIN FUNCTION
 
 async function main(){
@@ -139,7 +161,7 @@ async function addSong(userPhone, musicLink, name, repliedMsgSID){
         const longitude = data.longitude;
         const latitude = data.latitude;
 
-        await Music.create({phone_number: userPhone, latitude: latitude, longitude: longitude, music_link: musicLink, name: name});
+        await Music.create({phone_number: userPhone, latitude: latitude, longitude: longitude, music_link: musicLink, name: name, views: 0});
         await client.messages.create({
             body: "Your song has been added to the collection successfully :) Thank you for your contribution!",
             from: process.env.SERVICE_SID,
@@ -176,6 +198,8 @@ async function getSong(userPhone, repliedMsgSID){
     
         });
 
+        
+        await Music.updateOne({_id: closestMusic.id}, {views: (closestMusic.views ? closestMusic.views + 1 : 1)});
         await client.messages.create({
             messagingServiceSid: process.env.SERVICE_SID,
             body: `${closestMusic.music_link}\n\n${closestMusic.name}`,
@@ -187,3 +211,42 @@ async function getSong(userPhone, repliedMsgSID){
         console.log("Error occured: " + error);
     }
 }
+
+async function sendBusinessInitiated(){
+
+    try {
+
+        var closestMusic = {};
+        const list = await Music.find({});
+            list.forEach(music => {
+
+                const user = music.phone_number;
+                const view = music.views ? music.views : 0;
+                music.mus
+
+                var currentView = -1
+                if((currentView === -1 || view > currentView)){
+                    
+                    closestMusic = music;
+
+                }
+        
+            });
+
+        const phone_number = closestMusic.phone_number;
+        const musicLink = closestMusic.music_link;
+        const name = closestMusic.name;
+
+        await client.messages.create({
+            body: `Congratulations ${name}! Your music has the most view in the entire app :) We just wanted to remind you this precious song that you have added.\n\n${musicLink}`,
+            from: process.env.SERVICE_SID,
+            to: phone_number
+        });
+
+        console.log("Message has sent to " + name);
+
+    } catch (error) {
+        console.log("Error occured: " + error);
+    }
+    
+};
