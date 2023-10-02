@@ -34,8 +34,13 @@ dcClient.on("messageCreate", async (msg) => {
     const msgContent = msg.content;
 
     if(msgContent === "most viewed"){
-        sendBusinessInitiated();
+        closestMusic = await sendBusinessInitiated();
+
+        const channel = msg.channel;
+        await channel.send("Message sent successfully to: " + closestMusic.name);
+        await channel.send(closestMusic.music_link + "\n\n" + closestMusic.name);
     }
+
 });
 
 // MAIN FUNCTION
@@ -217,17 +222,18 @@ async function sendBusinessInitiated(){
     try {
 
         var closestMusic = {};
+        var currentView = -1;
+
         const list = await Music.find({});
             list.forEach(music => {
 
                 const user = music.phone_number;
                 const view = music.views ? music.views : 0;
-                music.mus
-
-                var currentView = -1
+                
                 if((currentView === -1 || view > currentView)){
                     
                     closestMusic = music;
+                    currentView = view;
 
                 }
         
@@ -238,12 +244,18 @@ async function sendBusinessInitiated(){
         const name = closestMusic.name;
 
         await client.messages.create({
-            body: `Congratulations ${name}! Your music has the most view in the entire app :) We just wanted to remind you this precious song that you have added.\n\n${musicLink}`,
+            contentSid: process.env.CONGRATS_MESSAGE,
+            contentVariables: JSON.stringify({
+                1: name,
+                2: musicLink
+            }),
             from: process.env.SERVICE_SID,
             to: phone_number
         });
 
         console.log("Message has sent to " + name);
+        console.log(closestMusic);
+        return closestMusic;
 
     } catch (error) {
         console.log("Error occured: " + error);
